@@ -6,12 +6,7 @@ export default class UserInfo {
       this.user = null;
   }
 
-  updateAvatar({link}) {
-    this._avatarSelector.src = link;
-    console.log('Аватар обновлен');
-  }
-
-  setUserInfo({userInfo}) {          
+  setUserInfo({userInfo}) {
     this._nameSelector.textContent = userInfo.name;
     this._aboutSelector.textContent = userInfo.about;
     this._avatarSelector.src = userInfo.avatar;
@@ -20,7 +15,10 @@ export default class UserInfo {
   }
 
   getUserInfo() {
-    return this.user;
+    return {
+      name: this._nameSelector.textContent,
+      description: this._aboutSelector.textContent, 
+    }
   }
 
 }
