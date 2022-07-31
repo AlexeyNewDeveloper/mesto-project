@@ -4,28 +4,27 @@ import Api from './components/Api.js';
 import Card from './components/Card.js';
 import { UserInfo } from './components/UserInfo.js';
 import { Section } from './components/Section.js';
+import { insertCardOnPage, userName, userAbout } from './components/Popup.js';
 import { PopupWithImage } from './components/PopupWithImage.js';
 import { PopupWithForm } from './components/PopupWithForm.js';
-import {
-    popupAddCardSelector,
-    popupEditProfileSelector,
-    popupEditAvatarSelector,
-    popupImageSelector,
-    popupConfirmDeleteSelector,
-    formAddCard,
-    formEditProfile,
-    formEditAvatar,
-    buttonAddCard,
-    buttonEditProfile,
-    buttonEditAvatar,
-    profileAvatar,
-    cardItemsList,
-    loadingText,
-    validationSettings,
-    params,
-    config,
-    userName,
-    userAbout
+import { 
+    popupAddCard, 
+    popupEditProfile, 
+    popupEditAvatar, 
+    popupImage, 
+    popupConfirmDelete, 
+    formAddCard, 
+    formEditProfile, 
+    formEditAvatar, 
+    buttonAddCard, 
+    buttonEditProfile, 
+    buttonEditAvatar, 
+    profileAvatar, 
+    cardItemsList, 
+    loadingText, 
+    validationSettings, 
+    params, 
+    config 
 } from './utils/constants.js'
 
 const cardPopupFromValidator = new FormValidator(formAddCard, validationSettings);
@@ -37,11 +36,11 @@ avatarPopupFromValidator.enableValidation();
 
 const api = new Api({config});
 const user = new UserInfo({nameSelector: userName, aboutSelector: userAbout, avatarSelector: profileAvatar});
-const popupWithImageObject = new PopupWithImage({popupSelector: popupImageSelector});
-const popupConfirmDeleteObject = new PopupWithForm({popupSelector: popupConfirmDeleteSelector, callbackSubmitForm: deleteCardFromServer});
-const popupWithFormAddCard = new PopupWithForm({popupSelector: popupAddCardSelector, callbackSubmitForm: addCardOnPage});
-const popupWithFormEditProfile = new PopupWithForm({popupSelector: popupEditProfileSelector, callbackSubmitForm: handleProfileEditFormSubmit});
-const popupWithFormEditAvatar = new PopupWithForm({popupSelector: popupEditAvatarSelector, callbackSubmitForm: handleEditAvatarFormSubmit});
+const popupWithImageObject = new PopupWithImage({selectorPopup: popupImage});
+const popupConfirmDeleteObject = new PopupWithForm({selectorPopup: popupConfirmDelete, callbackSubmitForm: deleteCardFromServer});
+const popupWithFormAddCard = new PopupWithForm({selectorPopup: popupAddCard, callbackSubmitForm: addCardOnPage});
+const popupWithFormEditProfile = new PopupWithForm({selectorPopup: popupEditProfile, callbackSubmitForm: handleProfileEditFormSubmit});
+const popupWithFormEditAvatar = new PopupWithForm({selectorPopup: popupEditAvatar, callbackSubmitForm: handleEditAvatarFormSubmit});
 const section = new Section({renderer: insertCardOnPage}, cardItemsList);
 const cardObject = new Card({
     params: params,
@@ -57,27 +56,18 @@ Promise.all([
     api.getInitialCards()
   ])
     .then (([profileInfo, cardsArr]) => {
-      console.log(profileInfo);
       user.setUserInfo({userInfo: profileInfo});
       cardObject.setUserId({userId: profileInfo['_id']});
-      // const cards = cardObject.getCardsArray({initialDataArray: cardsArr});
-      const cards = [];
-      console.log(cardsArr);
-      cardsArr.forEach(card => {
-        cards.push(cardObject.getCard({initialData: card}));
-      });
+      const cards = cardObject.getCardsArray({initialDataArray: cardsArr});
       section.appendCardOnPage({arrayData: cards});
       buttonAddCard.addEventListener('click', () => {
-          popupWithFormAddCard.openPopup({});
-          cardPopupFromValidator.resetValidation();
+          popupWithFormAddCard.openPopup({reset: true});
       })
       buttonEditProfile.addEventListener('click', () => {
-          popupWithFormEditProfile.openPopup({inputData: {name: userName.textContent, description: userAbout.textContent}});
-          userPopupFromValidator.resetValidation();
+          popupWithFormEditProfile.openPopup({withInitialValuesFields: true});
       })
       buttonEditAvatar.addEventListener('click', () => {
-          popupWithFormEditAvatar.openPopup({});
-          avatarPopupFromValidator.resetValidation();
+          popupWithFormEditAvatar.openPopup({reset: true});
       })
         console.log('Все нормально загрузилось');
       })
@@ -88,7 +78,7 @@ Promise.all([
 function handleProfileEditFormSubmit(evt) {
   evt.preventDefault();
   const inputValues = popupWithFormEditProfile.getInputValues();
-  popupWithFormEditProfile.renderLoading(true);
+  popupWithFormEditProfile.changeButtonTextDuringLoading({loadingText: loadingText, primaryText: this.buttonSubmit.textContent});
 
   api.updateProfileInfo({inputValues: inputValues})
     .then(updatedUserInfo => {
@@ -99,7 +89,7 @@ function handleProfileEditFormSubmit(evt) {
       console.log(error);
     })
     .finally(() => {
-      popupWithFormEditProfile.renderLoading(false);
+      popupWithFormEditProfile.changeButtonTextDuringLoading({});
     })
 
 }
@@ -107,18 +97,18 @@ function handleProfileEditFormSubmit(evt) {
 function handleEditAvatarFormSubmit(evt) {
   evt.preventDefault();
   const inputValues = popupWithFormEditAvatar.getInputValues();
-  popupWithFormEditAvatar.renderLoading(true);
+  popupWithFormEditAvatar.changeButtonTextDuringLoading({loadingText: loadingText, primaryText: this.buttonSubmit.textContent});
 
   api.editProfileAvatar({inputValues: inputValues})
     .then(updatedAvatarLink => {
-      user.setUserInfo({userInfo: updatedAvatarLink});
+      user.updateAvatar({link: updatedAvatarLink.avatar});
       popupWithFormEditAvatar.closePopup(evt);
     })
     .catch(error => {
     console.log(error);
     })
     .finally(() => {
-      popupWithFormEditAvatar.renderLoading(false);
+      popupWithFormEditAvatar.changeButtonTextDuringLoading({});
     })
 }
 
@@ -126,11 +116,10 @@ function handleEditAvatarFormSubmit(evt) {
 function addCardOnPage(evt) {
     evt.preventDefault();
     const inputValues = popupWithFormAddCard.getInputValues();
-    popupWithFormAddCard.renderLoading(true);
+    popupWithFormAddCard.changeButtonTextDuringLoading({loadingText: loadingText, primaryText: this.buttonSubmit.textContent});
     setTimeout(() => {
         api.addCardToServer({inputValues: inputValues})
         .then(card => {
-            console.log(card);
             const cardObj = cardObject.getCard({initialData: card})
             section.appendCardOnPage({arrayData: [cardObj]});
             popupWithFormAddCard.closePopup(evt);
@@ -139,18 +128,18 @@ function addCardOnPage(evt) {
             console.log(error);
         })
         .finally(() => {
-            popupWithFormAddCard.renderLoading(false);
+            popupWithFormAddCard.changeButtonTextDuringLoading({});
         })
     }, 1);
-  }
+
+}
 
 
 function deleteCardFromServer(evt) {
     evt.preventDefault();
-    popupConfirmDeleteObject.renderLoading(true);
+    popupConfirmDeleteObject.changeButtonTextDuringLoading({loadingText: loadingText, primaryText: this.buttonSubmit.textContent});
     api.deleteCardFromServer({cardId: this.cardObject.cardId})
     .then(data => {
-        console.log(this, 'asd');
         this.cardObject.removeCard();
         this.cardObject.popupWithForm.closePopup(evt);
         console.log('Карточка удалена');
@@ -159,31 +148,6 @@ function deleteCardFromServer(evt) {
         console.log('Карточка не удалена', error);
     })
     .finally(() => {
-      popupConfirmDeleteObject.renderLoading(false);
+        popupConfirmDeleteObject.changeButtonTextDuringLoading({});
     })
-}
-
-function insertCardOnPage(card) {
-  return (
-      checkLoadImageFromServer(card)
-      .then(res => {
-          return res;
-      })
-      .catch(err => {
-          console.log(`Картинка не загрузилась. ${err}`);
-      }));
-}
-
-function checkLoadImageFromServer(cardObject) {
-  return new Promise(function(resolve, reject) {
-  const image = document.createElement('img');
-
-  image.src = cardObject.cardImg.src;
-  image.onerror = function() {
-      reject(cardObject);
-  };
-  image.onload = function() {
-      resolve(cardObject);
-  };
-});
-}
+    }

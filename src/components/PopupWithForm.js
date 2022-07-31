@@ -1,41 +1,41 @@
-import { Popup } from "./Popup.js";
+import { Popup, userName, userAbout } from "./Popup.js";
 
 export default class PopupWithForm extends Popup {
-  constructor({popupSelector, callbackSubmitForm}) {
-      super({popupSelector: popupSelector});
+  constructor({selectorPopup, callbackSubmitForm}) {
+      super({selectorPopup: selectorPopup});
       this._callbackSubmitForm = callbackSubmitForm;
-      this._buttonSubmit = this._popup.querySelector('.form__save');
-      this._formElement = this._popup.querySelector('.form');
-      this._submitBtnText = this._buttonSubmit.textContent;
+      this._buttonSubmit = this._selectorPopup.querySelector('.form__save');
+      this._formElement = this._selectorPopup.querySelector('.form');
+      this._cardElement = null;
+      this._cardObject = null;
+      this._primaryTextButton = '';
       this._eventObject = {
           handleEvent: this._callbackSubmitForm,
           buttonSubmit: this._buttonSubmit,
           formElement: this._formElement,
       };
-
-     this._inputList = Array.from(this._formElement.querySelectorAll('.form__input-text'));
   }
 
-  setEventListener() {
-    super.setEventListener();
-    this._formElement.addEventListener('submit', this._eventObject);
+  addEventSubmitForForm() {
+
+      if(this._selectorPopup.id === 'confirmDelete') {
+          this._buttonSubmit.addEventListener('click', this._eventObject);
+      } else {
+          this._formElement.addEventListener('submit', this._eventObject);
+      }
   }
 
-  _removeEventListeners() {
-    super._removeEventListeners();
-    this._formElement.removeEventListener('submit', this._eventObject);
+  _removeFormListener() {
+      if(this._selectorPopup.id === 'confirmDelete') {
+          this._buttonSubmit.removeEventListener('click', this._eventObject);
+      } else {
+          this._formElement.removeEventListener('submit', this._eventObject);
+      }
   }
 
   _fillInitialValuesFields() {
-      this._formElement.elements.name.value = this._formElement.elements.name.value;
-      this._formElement.elements.description.value = this._formElement.elements.description.value;
-  }
-
-  _setInputValues(data) {
-    this._inputList.forEach((input) => {
-      // тут вставляем в `value` инпута данные из объекта по атрибуту `name` этого инпута
-      input.value = data[input.name];
-    });
+      this._formElement.elements.name.value = userName.textContent;
+      this._formElement.elements.description.value = userAbout.textContent;
   }
 
   getInputValues() {
@@ -49,29 +49,32 @@ export default class PopupWithForm extends Popup {
     return inputValues
     }
 
-  renderLoading(isLoading, loadingText='Сохранение...') {
-    if (isLoading) {
-      this._buttonSubmit.textContent = loadingText;
-    } else {
-      this._buttonSubmit.textContent = this._submitBtnText;
-    }
+  changeButtonTextDuringLoading({loadingText, primaryText}) {
+      if(loadingText) {
+          this._primaryTextButton = primaryText;
+          this._buttonSubmit.textContent = loadingText;
+      } else {
+          this._buttonSubmit.textContent = this._primaryTextButton;
+      }
   }
 
   closePopup(evt) {
-      this._removeEventListeners();
+      this._removeFormListener();
       super.closePopup(evt);
-      this._formElement.reset();
   }
 
-  openPopup({inputData, cardObject}) {
+  openPopup({withInitialValuesFields, cardObject, reset}) {
       this._eventObject.cardObject = cardObject;
       this._eventObject.obj = this;
-      if(inputData) {
-          this._setInputValues(inputData);
+
+      if(withInitialValuesFields === true) {
+          this._fillInitialValuesFields();
       }
-      this.setEventListener();
+      if(reset) {
+          this._formElement.reset();
+      }
+      this.addEventSubmitForForm();
       super.openPopup();
-      console.log(this);
   }
 }
 

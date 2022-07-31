@@ -6,12 +6,21 @@ export default class UserInfo {
       this.user = null;
   }
 
-  setUserInfo({userInfo}) {
+  updateAvatar({link}) {
+    this._avatarSelector.src = link;
+    console.log('Аватар обновлен');
+  }
+
+  setUserInfo({userInfo}) {          
     this._nameSelector.textContent = userInfo.name;
     this._aboutSelector.textContent = userInfo.about;
     this._avatarSelector.src = userInfo.avatar;
     this.user = userInfo;
     console.log('Данные обновлены');
+  }
+
+  getUserInfo() {
+    return this.user;
   }
 
 }
